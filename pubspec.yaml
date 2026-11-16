@@ -1,0 +1,47 @@
+name: duan_len_lich_ca_nhan
+description: "Ứng dụng Lên lịch cá nhân & Báo thức thông minh tích hợp Gemini AI"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Quản lý Lịch & Thời gian
+  table_calendar: ^3.1.2
+  intl: ^0.19.0
+
+  # Lưu trữ cục bộ
+  shared_preferences: ^2.2.3
+
+  # Báo thức & Thông báo
+  flutter_local_notifications: ^17.2.1
+  audioplayers: ^6.0.0
+  flutter_tts: ^4.0.2
+
+  # Nhận diện giọng nói (Speech-to-Text) & Mic
+  speech_to_text: ^6.6.1
+  permission_handler: ^11.3.1
+
+  # Gemini AI API
+  google_generative_ai: ^0.4.4
+  http: ^1.2.1
+
+  # Tiện ích
+  uuid: ^4.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/audio/
