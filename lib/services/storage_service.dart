@@ -6,6 +6,8 @@ class StorageService {
   static const String _eventsKey = 'events_storage_key';
   static const String _geminiApiKey = 'gemini_api_key';
   static const String _alarmRingtonePathKey = 'alarm_ringtone_path';
+  static const String _vieneuServerUrlKey = 'vieneu_server_url';
+  static const String _useVieNeuTtsKey = 'use_vieneu_tts';
 
   static SharedPreferences? _prefs;
 
@@ -81,8 +83,22 @@ class StorageService {
     return _prefs?.getString(_alarmRingtonePathKey);
   }
 
-  static Future<void> saveCustomRingtone(String path) async {
+  // --- CÀI ĐẶT VIENEU-TTS AI ---
+  static String? getVieNeuServerUrl() {
+    return _prefs?.getString(_vieneuServerUrlKey);
+  }
+
+  static Future<void> saveVieNeuServerUrl(String url) async {
     if (_prefs == null) _prefs = await SharedPreferences.getInstance();
-    await _prefs!.setString(_alarmRingtonePathKey, path);
+    await _prefs!.setString(_vieneuServerUrlKey, url.trim());
+  }
+
+  static bool getUseVieNeuTts() {
+    return _prefs?.getBool(_useVieNeuTtsKey) ?? false;
+  }
+
+  static Future<void> setUseVieNeuTts(bool use) async {
+    if (_prefs == null) _prefs = await SharedPreferences.getInstance();
+    await _prefs!.setBool(_useVieNeuTtsKey, use);
   }
 }

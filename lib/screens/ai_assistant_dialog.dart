@@ -216,7 +216,7 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
                 decoration: BoxDecoration(
                   color: Colors.indigo.shade50,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.parseBorder(Border.all(color: Colors.indigo.shade200)),
+                  border: Border.all(color: Colors.indigo.shade200),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
