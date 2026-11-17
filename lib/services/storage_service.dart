@@ -60,6 +60,15 @@ class StorageService {
     await saveEvents(events);
   }
 
+  static EventModel? getEventById(String id) {
+    final events = getEvents();
+    try {
+      return events.firstWhere((e) => e.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Lọc sự kiện theo ngày cụ thể (năm, tháng, ngày)
   static List<EventModel> getEventsForDay(DateTime day) {
     final events = getEvents();

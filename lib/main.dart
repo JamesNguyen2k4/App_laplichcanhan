@@ -27,6 +27,7 @@ class ScheduleAlarmApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Lịch & Báo Thức AI',
+      navigatorKey: AlarmService.navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
