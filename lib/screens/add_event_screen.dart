@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/event_model.dart';
 import '../services/storage_service.dart';
 import '../services/alarm_service.dart';
+import '../services/tts_service.dart';
 
 class AddEventScreen extends StatefulWidget {
   final DateTime initialDate;
@@ -115,6 +116,8 @@ class _AddEventScreenState extends State<AddEventScreen> {
 
     if (_isAlarmEnabled) {
       await AlarmService.scheduleAlarm(event);
+      // Tải và lưu sẵn giọng đọc VieNeu-TTS vào máy ngay khi tạo lịch
+      TtsService.cacheEventAudio(event.id, event.title, event.description);
     }
 
     if (mounted) {

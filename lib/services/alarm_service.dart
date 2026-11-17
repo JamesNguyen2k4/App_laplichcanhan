@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../models/event_model.dart';
 import 'tts_service.dart';
@@ -109,6 +110,7 @@ class AlarmService {
 
         // 3. Kích hoạt giọng nói tiếng Việt đọc to lời nhắc
         await TtsService.speakEventReminder(
+          event.id,
           event.title,
           event.description,
           onComplete: () {
@@ -128,11 +130,12 @@ class AlarmService {
     if (customRingtone != null && customRingtone.isNotEmpty) {
       await _audioPlayer.play(DeviceFileSource(customRingtone));
     } else {
-      // Phát file chuông mặc định từ thư mục assets
+      // Kiểm tra file chuông mặc định có tồn tại trong assets chưa trước khi phát
       try {
+        await rootBundle.load('assets/audio/default_alarm.mp3');
         await _audioPlayer.play(AssetSource('audio/default_alarm.mp3'));
-      } catch (e) {
-        // Fallback: nếu chưa có file mp3 thì vẫn rung và đọc TTS
+      } catch (_) {
+        // Chưa chép file default_alarm.mp3 vào assets/audio/ -> bỏ qua chuông, vẫn chạy đếm giờ đọc TTS
       }
     }
   }

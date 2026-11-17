@@ -65,4 +65,5 @@ dependencies {
     implementation 'androidx.window:window:1.0.0'
     implementation 'androidx.window:window-java:1.0.0'
     implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.19.2'
 }

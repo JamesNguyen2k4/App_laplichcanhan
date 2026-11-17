@@ -6,8 +6,11 @@ class StorageService {
   static const String _eventsKey = 'events_storage_key';
   static const String _geminiApiKey = 'gemini_api_key';
   static const String _alarmRingtonePathKey = 'alarm_ringtone_path';
-  static const String _vieneuServerUrlKey = 'vieneu_server_url';
   static const String _useVieNeuTtsKey = 'use_vieneu_tts';
+  static const String _ttsVoiceNameKey = 'tts_voice_name';
+  static const String _ttsVoiceLocaleKey = 'tts_voice_locale';
+  static const String _ttsSpeechRateKey = 'tts_speech_rate';
+  static const String _ttsPitchKey = 'tts_pitch';
 
   static SharedPreferences? _prefs;
 
@@ -83,22 +86,42 @@ class StorageService {
     return _prefs?.getString(_alarmRingtonePathKey);
   }
 
-  // --- CÀI ĐẶT VIENEU-TTS AI ---
-  static String? getVieNeuServerUrl() {
-    return _prefs?.getString(_vieneuServerUrlKey);
-  }
-
-  static Future<void> saveVieNeuServerUrl(String url) async {
-    if (_prefs == null) _prefs = await SharedPreferences.getInstance();
-    await _prefs!.setString(_vieneuServerUrlKey, url.trim());
-  }
-
+  // --- CÀI ĐẶT VIENEU-TTS 0.3B OFFLINE ---
   static bool getUseVieNeuTts() {
-    return _prefs?.getBool(_useVieNeuTtsKey) ?? false;
+    return _prefs?.getBool(_useVieNeuTtsKey) ?? true;
   }
 
   static Future<void> setUseVieNeuTts(bool use) async {
-    if (_prefs == null) _prefs = await SharedPreferences.getInstance();
+    _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setBool(_useVieNeuTtsKey, use);
+  }
+
+  // --- CÀI ĐẶT GIỌNG ĐỌC TTS ---
+  static String? getTtsVoiceName() => _prefs?.getString(_ttsVoiceNameKey);
+  static String? getTtsVoiceLocale() => _prefs?.getString(_ttsVoiceLocaleKey);
+
+  static Future<void> saveTtsVoice(String? name, String? locale) async {
+    _prefs ??= await SharedPreferences.getInstance();
+    if (name == null || locale == null) {
+      await _prefs!.remove(_ttsVoiceNameKey);
+      await _prefs!.remove(_ttsVoiceLocaleKey);
+    } else {
+      await _prefs!.setString(_ttsVoiceNameKey, name);
+      await _prefs!.setString(_ttsVoiceLocaleKey, locale);
+    }
+  }
+
+  static double getTtsSpeechRate() => _prefs?.getDouble(_ttsSpeechRateKey) ?? 0.5;
+
+  static Future<void> saveTtsSpeechRate(double rate) async {
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setDouble(_ttsSpeechRateKey, rate);
+  }
+
+  static double getTtsPitch() => _prefs?.getDouble(_ttsPitchKey) ?? 1.0;
+
+  static Future<void> saveTtsPitch(double pitch) async {
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs!.setDouble(_ttsPitchKey, pitch);
   }
 }

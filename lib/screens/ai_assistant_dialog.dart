@@ -5,6 +5,7 @@ import '../services/stt_service.dart';
 import '../services/gemini_service.dart';
 import '../services/storage_service.dart';
 import '../services/alarm_service.dart';
+import '../services/tts_service.dart';
 
 class AiAssistantDialog extends StatefulWidget {
   final Function() onEventAdded;
@@ -91,6 +92,12 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
     // Kích hoạt báo thức nếu bật
     if (_parsedEvent!.isAlarmEnabled) {
       await AlarmService.scheduleAlarm(_parsedEvent!);
+      // Tải và lưu sẵn giọng đọc VieNeu-TTS vào máy ngay khi tạo lịch
+      TtsService.cacheEventAudio(
+        _parsedEvent!.id,
+        _parsedEvent!.title,
+        _parsedEvent!.description,
+      );
     }
 
     widget.onEventAdded();
