@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -29,14 +30,17 @@ class VieNeu03bService {
       final ggufFile = File('${modelDir.path}/$ggufFileName');
       final codecFile = File('${modelDir.path}/$codecFileName');
 
-      if (!await ggufFile.exists()) {
+      if (!await ggufFile.exists() || await ggufFile.length() < 1024 * 1024) {
         await _copyAssetIfExists('assets/models/$ggufFileName', ggufFile);
       }
-      if (!await codecFile.exists()) {
+      if (!await codecFile.exists() || await codecFile.length() < 1024 * 1024) {
         await _copyAssetIfExists('assets/models/$codecFileName', codecFile);
       }
 
-      if (await ggufFile.exists() && await codecFile.exists()) {
+      if (await ggufFile.exists() &&
+          await ggufFile.length() > 1024 * 1024 &&
+          await codecFile.exists() &&
+          await codecFile.length() > 1024 * 1024) {
         _ggufLocalPath = ggufFile.path;
         _codecLocalPath = codecFile.path;
         return true;
@@ -49,10 +53,12 @@ class VieNeu03bService {
 
   static Future<void> _copyAssetIfExists(String assetPath, File targetFile) async {
     try {
-      final byteData = await rootBundle.load(assetPath);
-      await targetFile.writeAsBytes(
-        byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
-        flush: true,
+      await _channel.invokeMethod<bool>(
+        'copyAssetToFile',
+        {
+          'assetPath': assetPath,
+          'targetPath': targetFile.path,
+        },
       );
     } catch (_) {
       // Asset chưa được đóng gói trong APK -> bỏ qua, sẽ fallback sang Google TTS
@@ -108,6 +114,30 @@ class VieNeu03bService {
     }
   }
 
+  static String _cachedRefPhonemes = '';
+  static List<int> _cachedRefCodes = const [];
+  static bool _voiceLoaded = false;
+
+  static Future<void> _ensureDefaultVoiceLoaded() async {
+    if (_voiceLoaded) return;
+    _voiceLoaded = true;
+    try {
+      final rawJson = await rootBundle.loadString('assets/models/voices.json');
+      final data = json.decode(rawJson) as Map<String, dynamic>;
+      final presets = data['presets'] as Map<String, dynamic>?;
+      final defaultKey = data['default_voice']?.toString() ?? 'Binh';
+      final preset = (presets?[defaultKey] ?? presets?.values.firstOrNull) as Map<String, dynamic>?;
+      if (preset != null) {
+        final refText = preset['text']?.toString() ?? '';
+        final codesRaw = preset['codes'] as List<dynamic>? ?? const [];
+        _cachedRefCodes = codesRaw.map((e) => (e as num).toInt()).toList();
+        _cachedRefPhonemes = VietnameseG2pService.phonemize(refText);
+      }
+    } catch (e) {
+      if (kDebugMode) print('Không đọc được voices.json: $e');
+    }
+  }
+
   /// Tổng hợp văn bản thành file WAV offline cho sự kiện (nếu model 0.3B đã sẵn sàng).
   /// Trả về đường dẫn file .wav hoặc null nếu chưa có file trọng số trong assets/models/.
   static Future<String?> synthesizeToWav(String text, String outputWavPath) async {
@@ -116,8 +146,14 @@ class VieNeu03bService {
       return null;
     }
 
-    // 1. Tạo prompt IPA chuẩn hóa cho GGUF 0.3B
-    final prompt = buildGgufPrompt(text);
+    await _ensureDefaultVoiceLoaded();
+
+    // 1. Tạo prompt IPA chuẩn hóa cho GGUF 0.3B kèm giọng tham chiếu từ voices.json
+    final prompt = buildGgufPrompt(
+      text,
+      refPhonemes: _cachedRefPhonemes,
+      refCodes: _cachedRefCodes,
+    );
 
     // 2. Gọi GGUF backbone trên native để sinh `<|speech_X|>` tokens
     try {

@@ -43,6 +43,18 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/app/.cxx/
+/android/build/
+
+# Binary APKs and App Bundles
+*.apk
+*.aab
+
+# Large AI Model weights (>100MB GitHub limit, kept locally in assets/models/)
+assets/models/*.gguf
+assets/models/*.onnx
+assets/models/*.bin
+assets/models/*.safetensors
 
 # Widget Preview related
 .widget_preview/

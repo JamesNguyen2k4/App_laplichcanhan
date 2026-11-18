@@ -160,50 +160,60 @@ class AlarmService {
   }
 
   /// KÍCH HOẠT CHU KỲ BÁO THỨC:
-  /// 1. Reo chuông 1 hồi (khoảng 6 giây)
+  /// 1. Reo chuông 1 hồi (khoảng 4 giây)
   /// 2. Ngắt chuông
   /// 3. VieNeu-TTS / Google TTS đọc to lời nhắc bằng tiếng Việt chuẩn
-  static Future<void> triggerAlarmCycle(EventModel event, {int ringDurationSeconds = 6}) async {
+  static Future<void> triggerAlarmCycle(EventModel event, {int ringDurationSeconds = 4}) async {
     try {
       // 1. Bắt đầu phát chuông
-      await _playAlarmSound();
+      final hasRingtone = await _playAlarmSound();
 
-      // 2. Đặt thời gian ngắt 1 hồi chuông
-      _ringTimer?.cancel();
-      _ringTimer = Timer(Duration(seconds: ringDurationSeconds), () async {
-        // Ngắt âm thanh chuông
-        await _audioPlayer.stop();
-
-        // 3. Kích hoạt giọng nói tiếng Việt đọc to lời nhắc
+      if (hasRingtone) {
+        // 2. Đặt thời gian ngắt 1 hồi chuông rồi mới đọc TTS
+        _ringTimer?.cancel();
+        _ringTimer = Timer(Duration(seconds: ringDurationSeconds), () async {
+          await _audioPlayer.stop();
+          await TtsService.speakEventReminder(
+            event.id,
+            event.title,
+            event.description,
+          );
+        });
+      } else {
+        // Không có file chuông -> đọc ngay lời nhắc TTS, không chờ im lặng
         await TtsService.speakEventReminder(
           event.id,
           event.title,
           event.description,
-          onComplete: () {
-            // Khi đọc xong, có thể tiếp tục xử lý hoặc chờ người dùng tắt
-          },
         );
-      });
+      }
     } catch (e) {
       // ignore: avoid_print
       print("Lỗi kích hoạt chuông: $e");
     }
   }
 
-  /// Phát âm thanh chuông
-  static Future<void> _playAlarmSound() async {
+  /// Phát âm thanh chuông (trả về true nếu phát được file chuông)
+  static Future<bool> _playAlarmSound() async {
     final customRingtone = StorageService.getCustomRingtone();
     if (customRingtone != null && customRingtone.isNotEmpty) {
-      await _audioPlayer.play(DeviceFileSource(customRingtone));
-    } else {
-      // Kiểm tra file chuông mặc định có tồn tại trong assets chưa trước khi phát
       try {
-        await rootBundle.load('assets/audio/default_alarm.mp3');
-        await _audioPlayer.play(AssetSource('audio/default_alarm.mp3'));
+        await _audioPlayer.play(DeviceFileSource(customRingtone));
+        return true;
+      } catch (_) {}
+    }
+
+    for (final asset in ['assets/audio/default_alarm.mp3', 'assets/audio/default_alarm.wav']) {
+      try {
+        await rootBundle.load(asset);
+        final sourcePath = asset.replaceFirst('assets/', '');
+        await _audioPlayer.play(AssetSource(sourcePath));
+        return true;
       } catch (_) {
-        // Chưa chép file default_alarm.mp3 vào assets/audio/ -> bỏ qua chuông, vẫn chạy đếm giờ đọc TTS
+        // Thử file tiếp theo
       }
     }
+    return false;
   }
 
   /// Tắt toàn bộ chuông và giọng đọc (khi bấm Tắt trên màn hình)

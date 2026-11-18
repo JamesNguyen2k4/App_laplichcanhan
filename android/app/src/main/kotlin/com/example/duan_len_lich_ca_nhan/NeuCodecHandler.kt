@@ -1,12 +1,15 @@
 package com.example.duan_len_lich_ca_nhan
 
+import ai.onnxruntime.OnnxJavaType
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
+import ai.onnxruntime.TensorInfo
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.IntBuffer
 import java.nio.LongBuffer
 import kotlin.math.max
 import kotlin.math.min
@@ -43,13 +46,22 @@ class NeuCodecHandler {
 
         val inputName = session.inputNames.firstOrNull() ?: "codes"
         val shape = longArrayOf(1L, 1L, codes.size.toLong())
-        val tensor = OnnxTensor.createTensor(env, LongBuffer.wrap(codes), shape)
+        val inputInfo = session.inputInfo[inputName]?.info as? TensorInfo
+        val tensor = if (inputInfo?.type == OnnxJavaType.INT32) {
+            val intCodes = IntArray(codes.size) { i -> codes[i].toInt() }
+            OnnxTensor.createTensor(env, IntBuffer.wrap(intCodes), shape)
+        } else {
+            OnnxTensor.createTensor(env, LongBuffer.wrap(codes), shape)
+        }
 
         tensor.use { inputTensor ->
             val result = session.run(mapOf(inputName to inputTensor))
             result.use { ortResult ->
                 val rawValue = ortResult[0].value
                 val pcm = extractPcmFloatArray(rawValue)
+                if (pcm.isEmpty()) {
+                    throw IllegalStateException("NeuCodec trả về dữ liệu PCM rỗng")
+                }
                 writeWav16Bit(pcm, 24000, outputWavPath)
             }
         }

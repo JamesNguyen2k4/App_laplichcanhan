@@ -29,7 +29,8 @@
     <application
         android:label="Lịch &amp; Báo Thức AI"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:largeHeap="true">
 
         <activity
             android:name=".MainActivity"
@@ -71,4 +72,14 @@
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
+
+    <!-- Bắt buộc trên Android 11+ (API 30+) để flutter_tts và speech_to_text nhìn thấy dịch vụ hệ thống -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 </manifest>

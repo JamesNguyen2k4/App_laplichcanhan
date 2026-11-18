@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 class SttService {
@@ -8,8 +9,12 @@ class SttService {
   static Future<bool> init() async {
     if (_isAvailable) return true;
     _isAvailable = await _speech.initialize(
-      onError: (val) => print('Lỗi nhận diện giọng nói: $val'),
-      onStatus: (val) => print('Trạng thái Mic: $val'),
+      onError: (val) {
+        if (kDebugMode) print('Lỗi nhận diện giọng nói: $val');
+      },
+      onStatus: (val) {
+        if (kDebugMode) print('Trạng thái Mic: $val');
+      },
     );
     return _isAvailable;
   }
@@ -25,10 +30,12 @@ class SttService {
         onResult: (result) {
           onResult(result.recognizedWords);
         },
-        localeId: 'vi_VN', // Cấu hình nhận diện giọng nói tiếng Việt
-        listenMode: ListenMode.confirmation,
-        cancelOnError: true,
-        partialResults: true,
+        listenOptions: SpeechListenOptions(
+          listenMode: ListenMode.confirmation,
+          cancelOnError: true,
+          partialResults: true,
+          localeId: 'vi_VN', // Cấu hình nhận diện tiếng Việt chuẩn trong SpeechListenOptions
+        ),
       );
     }
   }

@@ -22,9 +22,21 @@ class TtsService {
   static Future<void> init() async {
     if (_isInitialized) return;
 
-    await _flutterTts.setLanguage('vi-VN');
-    await _flutterTts.setVolume(1.0);
-    await applySavedVoiceSettings();
+    try {
+      if (!kIsWeb && Platform.isAndroid) {
+        await _flutterTts.awaitSpeakCompletion(true);
+        // Ưu tiên chọn Google Speech Services nếu thiết bị có cài để đọc Tiếng Việt chuẩn
+        final engines = await _flutterTts.getEngines;
+        if (engines is List && engines.contains('com.google.android.tts')) {
+          await _flutterTts.setEngine('com.google.android.tts');
+        }
+      }
+      await _flutterTts.setLanguage('vi-VN');
+      await _flutterTts.setVolume(1.0);
+      await applySavedVoiceSettings();
+    } catch (e) {
+      if (kDebugMode) print("Lỗi khởi tạo TTS: $e");
+    }
 
     _flutterTts.setErrorHandler((msg) {
       if (kDebugMode) print("TTS Lỗi: $msg");
@@ -72,25 +84,30 @@ class TtsService {
 
   /// Áp dụng giọng đọc, tốc độ và cao độ đã lưu (tự động chọn giọng vi-VN nếu chưa chọn)
   static Future<void> applySavedVoiceSettings() async {
-    await _flutterTts.setLanguage('vi-VN');
-    await _flutterTts.setSpeechRate(StorageService.getTtsSpeechRate());
-    await _flutterTts.setPitch(StorageService.getTtsPitch());
+    try {
+      await _flutterTts.setLanguage('vi-VN');
+      await _flutterTts.setVolume(1.0);
+      await _flutterTts.setSpeechRate(StorageService.getTtsSpeechRate());
+      await _flutterTts.setPitch(StorageService.getTtsPitch());
 
-    var savedName = StorageService.getTtsVoiceName();
-    var savedLocale = StorageService.getTtsVoiceLocale();
+      var savedName = StorageService.getTtsVoiceName();
+      var savedLocale = StorageService.getTtsVoiceLocale();
 
-    if (savedName == null || savedLocale == null) {
-      final voices = await getAvailableVoices();
-      final viVoice = voices.where(_isVietnameseVoice).firstOrNull;
-      if (viVoice != null) {
-        savedName = viVoice.name;
-        savedLocale = viVoice.locale;
-        await StorageService.saveTtsVoice(savedName, savedLocale);
+      if (savedName == null || savedLocale == null) {
+        final voices = await getAvailableVoices();
+        final viVoice = voices.where(_isVietnameseVoice).firstOrNull;
+        if (viVoice != null) {
+          savedName = viVoice.name;
+          savedLocale = viVoice.locale;
+          await StorageService.saveTtsVoice(savedName, savedLocale);
+        }
       }
-    }
 
-    if (savedName != null && savedLocale != null) {
-      await _flutterTts.setVoice({'name': savedName, 'locale': savedLocale});
+      if (savedName != null && savedLocale != null) {
+        await _flutterTts.setVoice({'name': savedName, 'locale': savedLocale});
+      }
+    } catch (e) {
+      if (kDebugMode) print("Lỗi áp dụng cấu hình giọng đọc: $e");
     }
   }
 
